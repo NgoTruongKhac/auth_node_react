@@ -29,5 +29,7 @@ export const logout = () => {
   Cookies.remove("refresh_token");
 };
 export const loginWithGoogle = () => {
-  window.open(`${import.meta.env.VITE_SERVER_DOMAIN}/api/v1/auth/google`);
+  window.location.href = `${
+    import.meta.env.VITE_SERVER_DOMAIN
+  }/api/v1/auth/google`;
 };

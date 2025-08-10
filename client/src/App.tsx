@@ -11,6 +11,7 @@ import AuthGoogle from "./pages/authGoogle";
 import PrivateRoute from "./components/privateRoute";
 import PublicRoute from "./components/publicRoute";
 import Cookies from "js-cookie";
+import Chat from "./pages/chat";
 
 function App() {
   const { fetchCurrentUser, stopLoading } = useAuthStore();
@@ -38,6 +39,7 @@ function App() {
           <Route element={<PrivateRoute />}>
             <Route path="/profile" element={<Profile />} />
           </Route>
+          <Route path="/chat" element={<Chat />} />
         </Route>
         <Route path="/auth-google" element={<AuthGoogle />} />
       </Routes>

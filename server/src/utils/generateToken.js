@@ -3,7 +3,7 @@ import { JWT_KEY, JWT_REFRESH_KEY } from "../configs/env.js";
 
 export const generateAccessToken = (userId) => {
   const accessToken = jwt.sign({ userId }, JWT_KEY, {
-    expiresIn: "5s",
+    expiresIn: "15m",
   });
   return accessToken;
 };

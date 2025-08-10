@@ -7,6 +7,7 @@ const UserCheSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true },
     googleId: { type: String, unique: true },
     profilePicture: { type: String, default: "" },
+    friends: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   },
   { timestamps: true }
 );
