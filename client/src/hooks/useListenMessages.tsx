@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { socket } from "../socket/socket";
-import { useChatStore } from "../store/useConversationStore";
+import { useChatStore } from "../store/useChatStore";
 
 const useListenMessages = () => {
   const { messages, setMessages } = useChatStore();

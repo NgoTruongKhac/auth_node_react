@@ -17,7 +17,7 @@ interface AuthStore {
   fetchCurrentUser: () => Promise<void>;
   logout: () => void;
   isLoading: boolean;
-  stopLoading: () => void;
+  checkAuthStatus: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthStore>()((set, get) => ({
@@ -51,7 +51,19 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     });
   },
   isLoading: true,
-  stopLoading: () => {
-    set({ isLoading: false });
+  checkAuthStatus: async () => {
+    try {
+      const accessToken = Cookies.get("access_token");
+      if (accessToken) {
+        // Lấy hàm fetchCurrentUser từ trong store
+        await get().fetchCurrentUser();
+      }
+    } catch (error) {
+      // Bỏ qua lỗi vì fetchCurrentUser đã xử lý set state
+      console.error("Auth check failed:", error);
+    } finally {
+      // Luôn dừng loading sau khi kiểm tra xong
+      set({ isLoading: false });
+    }
   },
 }));

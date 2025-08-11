@@ -17,7 +17,7 @@ export const createConversation = async (req, res, next) => {
     if (!conversation) {
       conversation = new Conversation({
         participants: [userId, recipientId],
-        latstMessage: {
+        lastMessage: {
           content,
           senderId: userId,
           createdAt: new Date(),

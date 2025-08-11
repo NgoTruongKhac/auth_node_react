@@ -73,6 +73,37 @@ export const socketServer = (server) => {
 
           // Gửi tin nhắn đến TẤT CẢ client trong phòng có ID là conversationId
           io.to(conversationId).emit("getMessage", messageToSend);
+
+          // =============================================================
+          // --- BẮT ĐẦU LOGIC MỚI: GỬI THÔNG BÁO (NOTIFICATION) ---
+          // =============================================================
+
+          // BƯỚC 1: Lấy tất cả người tham gia trong cuộc trò chuyện từ DB
+          const conversation = await Conversation.findById(conversationId);
+          if (!conversation) return;
+
+          // BƯỚC 2: Lọc ra những người nhận thông báo (tất cả trừ người gửi)
+          const notificationRecipients = conversation.participants.filter(
+            // Rất quan trọng: Chuyển ObjectId thành string để so sánh
+            (participantId) => participantId.toString() !== senderId.toString()
+          );
+
+          // BƯỚC 3: Lặp qua và gửi thông báo nếu họ online
+          notificationRecipients.forEach((recipientId) => {
+            // Chuyển ObjectId thành string để tra cứu trong object `onlineUsers`
+            const recipientSocketId = onlineUsers[recipientId.toString()];
+
+            if (recipientSocketId) {
+              // Nếu người dùng này online, gửi sự kiện 'getNotification'
+              console.log(`Sending notification to ${recipientId}`);
+              io.to(recipientSocketId).emit("getNotification", {
+                sender: messageToSend.senderId,
+                conversationId: conversationId,
+                content: content,
+                createdAt: savedMessage.createdAt,
+              });
+            }
+          });
         } catch (error) {
           console.error("Error handling message:", error);
         }

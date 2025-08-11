@@ -1,7 +1,7 @@
 // src/components/chatContainer.tsx
 
-import { useChatStore } from "../store/useConversationStore";
-import { useEffect, useState, FormEvent, useRef } from "react";
+import { useChatStore } from "../store/useChatStore";
+import { useEffect, useState, type FormEvent, useRef } from "react";
 import { getMessages } from "../apis/message.api";
 import { useAuthStore } from "../store/useAuthStore";
 import blank_avatar from "../assets/images/blank_avatar.png";

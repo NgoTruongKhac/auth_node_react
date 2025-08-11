@@ -1,7 +1,7 @@
 import { getConversations } from "../apis/conversation.api";
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import blank_avatar from "../assets/images/blank_avatar.png";
-import { useChatStore } from "../store/useConversationStore";
+import { useChatStore } from "../store/useChatStore";
 
 type Conversation = {
   _id: string;
@@ -19,12 +19,14 @@ type Conversation = {
   };
 };
 
-export default function ChatSideBar() {
+function ChatSideBar() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  // đổi tên `setConversation` thành `setSelectedConversation` cho rõ nghĩa
-  const { setSelectedConversation, selectedConversation } = useChatStore();
-
-  console.log(conversations);
+  const setSelectedConversation = useChatStore(
+    (state) => state.setSelectedConversation
+  );
+  const selectedConversation = useChatStore(
+    (state) => state.selectedConversation
+  );
 
   useEffect(() => {
     const fetchConversations = async () => {
@@ -38,6 +40,15 @@ export default function ChatSideBar() {
 
     fetchConversations();
   }, []);
+
+  // const handleSelect = useCallback(
+  //   (conversation: Conversation) => {
+  //     setSelectedConversation(conversation);
+  //   },
+  //   [setSelectedConversation]
+  // );
+
+  console.log(conversations);
 
   return (
     // w-1/3 hoặc w-1/4 để xác định chiều rộng, ở đây dùng w-96 cho cố định
@@ -63,7 +74,7 @@ export default function ChatSideBar() {
               key={conversation._id}
               className={`rounded-lg mb-1 ${
                 selectedConversation?._id === conversation._id
-                  ? "bg-base-300"
+                  ? "bg-blue-500"
                   : ""
               }`}
             >
@@ -98,3 +109,5 @@ export default function ChatSideBar() {
     </div>
   );
 }
+
+export default memo(ChatSideBar);
