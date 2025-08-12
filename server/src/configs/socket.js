@@ -2,6 +2,7 @@ import { Server } from "socket.io";
 import { CLIENT_DOMAIN } from "./env.js";
 import { Message } from "../models/message.model.js";
 import { Conversation } from "../models/conversation.model.js";
+import { Notification } from "../models/notification.model.js";
 
 export const socketServer = (server) => {
   const io = new Server(server, {
@@ -43,72 +44,106 @@ export const socketServer = (server) => {
       console.log(`User ${socket.id} joined conversation: ${conversationId}`);
     });
 
-    // SỬA: Logic gửi tin nhắn
-    socket.on(
-      "sendMessage",
-      // Bỏ receiverId vì không cần nữa
-      async ({ senderId, content, conversationId }) => {
-        try {
-          const newMessage = new Message({
-            conversationId,
-            senderId,
-            content,
-          });
-          const savedMessage = await newMessage.save();
+    socket.on("sendMessage", async ({ senderId, content, conversationId }) => {
+      try {
+        // ... (lưu tin nhắn, cập nhật conversation, gửi getMessage vẫn như cũ)
+        const newMessage = new Message({
+          conversationId,
+          senderId,
+          content,
+        });
+        const savedMessage = await newMessage.save();
 
-          // Cập nhật tin nhắn cuối cùng trong conversation (giữ nguyên)
-          await Conversation.findByIdAndUpdate(conversationId, {
-            lastMessage: {
-              content: savedMessage.content,
-              senderId: savedMessage.senderId,
-              createdAt: savedMessage.createdAt,
-            },
-          });
+        await Conversation.findByIdAndUpdate(conversationId, {
+          lastMessage: {
+            content: savedMessage.content,
+            senderId: savedMessage.senderId,
+            createdAt: savedMessage.createdAt,
+          },
+        });
 
-          // Populate thông tin người gửi trước khi gửi đi
-          const messageToSend = await savedMessage.populate(
-            "senderId",
-            "username profilePicture"
-          );
+        const messageToSend = await savedMessage.populate(
+          "senderId",
+          "username profilePicture"
+        );
 
-          // Gửi tin nhắn đến TẤT CẢ client trong phòng có ID là conversationId
-          io.to(conversationId).emit("getMessage", messageToSend);
+        io.to(conversationId).emit("getMessage", messageToSend);
 
-          // =============================================================
-          // --- BẮT ĐẦU LOGIC MỚI: GỬI THÔNG BÁO (NOTIFICATION) ---
-          // =============================================================
+        // =============================================================
+        // --- BẮT ĐẦU LOGIC MỚI: GỬI THÔNG BÁO (NOTIFICATION) ---
+        // =============================================================
 
-          // BƯỚC 1: Lấy tất cả người tham gia trong cuộc trò chuyện từ DB
-          const conversation = await Conversation.findById(conversationId);
-          if (!conversation) return;
+        // BƯỚC 1: Lấy tất cả người tham gia và các socket đang trong phòng chat
+        const conversation = await Conversation.findById(conversationId);
+        if (!conversation) return;
 
-          // BƯỚC 2: Lọc ra những người nhận thông báo (tất cả trừ người gửi)
-          const notificationRecipients = conversation.participants.filter(
-            // Rất quan trọng: Chuyển ObjectId thành string để so sánh
-            (participantId) => participantId.toString() !== senderId.toString()
-          );
+        // Lấy Set chứa các socket.id đang trong phòng `conversationId`
+        // Dùng `|| new Set()` để tránh lỗi nếu phòng không tồn tại hoặc trống
+        const socketsInRoom =
+          io.sockets.adapter.rooms.get(conversationId) || new Set();
 
-          // BƯỚC 3: Lặp qua và gửi thông báo nếu họ online
-          notificationRecipients.forEach((recipientId) => {
-            // Chuyển ObjectId thành string để tra cứu trong object `onlineUsers`
-            const recipientSocketId = onlineUsers[recipientId.toString()];
+        // BƯỚC 2: Lọc ra những người nhận thông báo
+        const notificationRecipients = conversation.participants.filter(
+          (participantId) => {
+            const pIdString = participantId.toString();
 
-            if (recipientSocketId) {
-              // Nếu người dùng này online, gửi sự kiện 'getNotification'
-              console.log(`Sending notification to ${recipientId}`);
-              io.to(recipientSocketId).emit("getNotification", {
-                sender: messageToSend.senderId,
-                conversationId: conversationId,
-                content: content,
-                createdAt: savedMessage.createdAt,
-              });
+            // Điều kiện 1: Loại trừ người gửi tin nhắn
+            if (pIdString === senderId.toString()) {
+              return false;
             }
-          });
-        } catch (error) {
-          console.error("Error handling message:", error);
-        }
+
+            // Điều kiện 2: Loại trừ những người đang trong phòng chat
+            const participantSocketId = onlineUsers[pIdString];
+            if (participantSocketId && socketsInRoom.has(participantSocketId)) {
+              // Nếu người dùng này online VÀ socket của họ đang ở trong phòng,
+              // không gửi thông báo
+              return false;
+            }
+
+            // Nếu qua được 2 điều kiện trên thì gửi thông báo
+            return true;
+          }
+        );
+
+        // BƯỚC 3: Lặp qua và gửi thông báo nếu họ online
+        notificationRecipients.forEach((recipientId) => {
+          const recipientSocketId = onlineUsers[recipientId.toString()];
+
+          if (recipientSocketId) {
+            console.log(
+              `Sending notification to user ${recipientId} at socket ${recipientSocketId}`
+            );
+
+            // Tạo thông báo
+            const notification = new Notification({
+              recipient: recipientId,
+              sender: senderId,
+              conversationId: conversationId,
+              content: content,
+            });
+            notification.save();
+
+            io.to(recipientSocketId).emit("getNotification", {
+              recipient: recipientId,
+              sender: messageToSend.senderId,
+              conversationId: conversationId,
+              content: content,
+            });
+          }
+        });
+      } catch (error) {
+        console.error("Error handling message:", error);
       }
-    );
+    });
+
+    socket.on("sendFirstMessage", ({ senderId, recipientId, content }) => {
+      const recipientSocketId = onlineUsers[recipientId.toString()];
+      io.to(recipientSocketId).emit("getNotification", {
+        sender: senderId,
+        recipient: recipientId,
+        content: content,
+      });
+    });
 
     // Trong file socket.js
     socket.on("disconnect", () => {

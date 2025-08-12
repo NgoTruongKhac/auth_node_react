@@ -4,6 +4,12 @@ export const fetchCurrentUser = async () => {
   const response = await api.get("/user/me");
   return response.data;
 };
+
+export const getUsersByEmail = async (email: string) => {
+  const response = await api.get(`/user/search/${email}`);
+  return response.data;
+};
+
 export const updateProfilePicture = async (file: File) => {
   const formData = new FormData();
   formData.append("file", file);

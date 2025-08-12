@@ -24,6 +24,17 @@ export const getMe = async (req, res, next) => {
     next(error);
   }
 };
+export const getUsersByEmail = async (req, res, next) => {
+  try {
+    const { email } = req.params;
+    const users = await User.find({ email: { $regex: email, $options: "i" } })
+      .select("username email profilePicture")
+      .limit(10);
+    return res.status(200).json(users);
+  } catch (error) {
+    next(error);
+  }
+};
 
 export const updateProfilePicture = async (req, res, next) => {
   try {

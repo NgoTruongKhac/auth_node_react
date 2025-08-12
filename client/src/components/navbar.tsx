@@ -2,37 +2,44 @@ import { Link, useNavigate } from "react-router";
 import { useAuthStore } from "../store/useAuthStore";
 import blank_avatar from "../assets/images/blank_avatar.png";
 import { Bell } from "lucide-react";
-import { useState, useEffect } from "react";
-import { socket } from "../socket/socket"; // Import socket
+import { useNotificationStore } from "../store/useNotification";
+import { useListenNotifications } from "../hooks/useListenNotifications";
+import { useEffect } from "react";
+import {
+  getNotifications,
+  setNotificationRead,
+} from "../apis/notification.api";
+
 export default function Navbar() {
   const user = useAuthStore((state) => state.user);
   const navigate = useNavigate();
   const logout = useAuthStore((state) => state.logout);
 
-  const [notifications, setNotifications] = useState([]);
+  const { notifications, setNotifications } = useNotificationStore();
 
+  const fetchNotifications = async () => {
+    const fetchedNotifications = await getNotifications();
+    setNotifications(fetchedNotifications);
+  };
   useEffect(() => {
-    // Hàm xử lý khi nhận được thông báo mới
-    const handleNewNotification = (notificationData) => {
-      console.log("New notification received:", notificationData);
+    fetchNotifications();
+  }, []);
 
-      // Thêm thông báo mới vào danh sách
-      setNotifications((prev) => [notificationData, ...prev]);
+  console.log("Notifications:", notifications);
 
-      // Hoặc đơn giản là bật một cờ hiệu
-      // setHasNewNotification(true);
+  useListenNotifications();
 
-      // Bạn cũng có thể hiển thị một alert hoặc toast
-    };
+  const notificationsNotRead = notifications.filter((n) => !n.isRead);
+  console.log("Notifications not read:", notificationsNotRead);
 
-    // Bắt đầu lắng nghe sự kiện
-    socket?.on("getNotification", handleNewNotification);
-
-    // Rất quan trọng: Dọn dẹp listener khi component bị hủy
-    return () => {
-      socket?.off("getNotification", handleNewNotification);
-    };
-  }, [socket]); // Dependency array
+  const handleNotificationClick = async () => {
+    try {
+      await setNotificationRead();
+      fetchNotifications();
+    } catch (error) {
+      console.error("Error setting notification as read:", error);
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -59,12 +66,42 @@ export default function Navbar() {
           // Hiện user avatar nếu đã đăng nhập
           <div className="flex items-center gap-4">
             <div className="indicator">
-              {notifications.length > 0 && (
+              {notificationsNotRead.length > 0 && (
                 <span className="indicator-item badge badge-primary">
-                  {notifications.length}
+                  {notificationsNotRead.length}
                 </span>
               )}
-              <Bell className="text-2xl text-gray-500 cursor-pointer"></Bell>
+              <div
+                className="dropdown dropdown-end"
+                onClick={handleNotificationClick}
+              >
+                <div tabIndex={0} role="button">
+                  <Bell className="text-2xl text-gray-500 cursor-pointer"></Bell>
+                </div>
+                <ul
+                  tabIndex={0}
+                  className="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow"
+                >
+                  {notifications.map((notification) => (
+                    <li key={notification._id}>
+                      <div className="flex items-center gap-2">
+                        <div className="avatar">
+                          <div className="w-8 rounded-full">
+                            <img
+                              src={
+                                notification.sender.profilePicture ||
+                                blank_avatar
+                              }
+                              alt={`Avatar of ${notification.sender.username}`}
+                            />
+                          </div>
+                        </div>
+                        <span>{` send message: ${notification.content}`}</span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
 
             <div className="dropdown dropdown-end">

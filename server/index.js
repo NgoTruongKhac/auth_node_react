@@ -1,12 +1,12 @@
 import express from "express";
 import http from "http";
 import { connectDB } from "./src/database/mongodb.js";
-
 import { PORT } from "./src/configs/env.js";
 import { authRouter } from "./src/routes/auth.route.js";
 import { userRouter } from "./src/routes/user.route.js";
 import { conversationRouter } from "./src/routes/conversation.route.js";
 import { messageRouter } from "./src/routes/message.route.js";
+import { notificationRouter } from "./src/routes/notification.route.js";
 import session from "express-session";
 import cookieParser from "cookie-parser";
 import { SESSION_KEY, CLIENT_DOMAIN } from "./src/configs/env.js";
@@ -53,6 +53,7 @@ app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/conversation", conversationRouter);
 app.use("/api/v1/message", messageRouter);
+app.use("/api/v1/notification", notificationRouter);
 
 app.use(errorHandler);
 

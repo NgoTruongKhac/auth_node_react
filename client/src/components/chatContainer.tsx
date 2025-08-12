@@ -1,36 +1,35 @@
 // src/components/chatContainer.tsx
 
 import { useChatStore } from "../store/useChatStore";
-import { useEffect, useState, type FormEvent, useRef } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { getMessages } from "../apis/message.api";
 import { useAuthStore } from "../store/useAuthStore";
 import blank_avatar from "../assets/images/blank_avatar.png";
 import { socket } from "../socket/socket"; // Import socket
 import useListenMessages from "../hooks/useListenMessages"; // Import hook
+import { createConversation } from "../apis/conversation.api";
+import NoSelectConversation from "./noSelectConversation";
 
 // ... type message
 
 export default function ChatContainer() {
   // Lấy state và action từ store
-  const { selectedConversation, messages, setMessages } = useChatStore();
+  const {
+    selectedConversation,
+    messages,
+    setMessages,
+    setSelectedConversation,
+  } = useChatStore();
   const { user } = useAuthStore();
   const [content, setContent] = useState("");
-  const previousConversationId = useRef<string | null>(null); // Dùng để lưu conversationId cũ
 
   useListenMessages();
 
   useEffect(() => {
-    // Rời khỏi phòng cũ trước khi tham gia phòng mới
-    if (previousConversationId.current) {
-      socket?.emit("leaveConversation", previousConversationId.current); // (Optional but good practice)
-    }
-
-    const fetchMessagesAndJoinRoom = async () => {
-      if (selectedConversation) {
-        // Tham gia phòng mới
+    const fetchMessages = async () => {
+      // SỬA: Chỉ fetch tin nhắn nếu conversation đã có _id
+      if (selectedConversation && selectedConversation._id) {
         socket?.emit("joinConversation", selectedConversation._id);
-        previousConversationId.current = selectedConversation._id;
-
         try {
           const data = await getMessages(selectedConversation._id);
           setMessages(data.reverse());
@@ -38,37 +37,70 @@ export default function ChatContainer() {
           console.error("Failed to fetch messages:", error);
           setMessages([]);
         }
+      } else {
+        // Nếu là conversation mới (chưa có _id), thì danh sách tin nhắn rỗng
+        setMessages([]);
       }
     };
 
-    fetchMessagesAndJoinRoom();
+    fetchMessages();
 
-    // Cleanup khi component unmount
     return () => {
-      if (selectedConversation) {
+      if (selectedConversation?._id) {
         socket?.emit("leaveConversation", selectedConversation._id);
       }
     };
   }, [selectedConversation, setMessages]);
 
-  const handleSendMessage = (e: FormEvent) => {
+  // SỬA: Logic gửi tin nhắn
+  const handleSendMessage = async (e: FormEvent) => {
     e.preventDefault();
     if (!content.trim() || !user || !selectedConversation) return;
 
-    // Không cần receiverId nữa
-    socket?.emit("sendMessage", {
-      senderId: user.userId,
-      conversationId: selectedConversation._id,
-      content: content.trim(),
-    });
+    // Lấy ID của người nhận
+    const recipient = selectedConversation.participants.find(
+      (p) => p._id !== user.userId
+    );
+    if (!recipient) return;
 
-    setContent("");
+    // KIỂM TRA: Đây là tin nhắn đầu tiên hay tin nhắn tiếp theo?
+    if (selectedConversation.isNew || !selectedConversation._id) {
+      // === Gửi tin nhắn đầu tiên (qua HTTP POST) ===
+      try {
+        const newConversation = await createConversation(
+          recipient._id,
+          content.trim()
+        );
+
+        // Cập nhật conversation trong store với dữ liệu thật từ server
+        setSelectedConversation(newConversation);
+        socket?.emit("sendFirstMessage", {
+          senderId: user.userId,
+          recipientId: recipient._id,
+          content: content.trim(),
+        });
+
+        setContent("");
+      } catch (error) {
+        console.error("Failed to create conversation:", error);
+      }
+    } else {
+      // === Gửi các tin nhắn tiếp theo (qua Socket) ===
+      socket?.emit("sendMessage", {
+        senderId: user.userId,
+        conversationId: selectedConversation._id,
+        content: content.trim(),
+      });
+      setContent("");
+    }
   };
-
   // Lấy thông tin người đối thoại để hiển thị
   const otherUser = selectedConversation?.participants.find(
     (p) => p._id !== user?.userId
   );
+  if (!selectedConversation) {
+    return <NoSelectConversation />;
+  }
 
   return (
     <div className="flex flex-1 flex-col">
