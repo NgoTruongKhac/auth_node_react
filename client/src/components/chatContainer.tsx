@@ -1,7 +1,7 @@
 // src/components/chatContainer.tsx
 
 import { useChatStore } from "../store/useChatStore";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { getMessages } from "../apis/message.api";
 import { useAuthStore } from "../store/useAuthStore";
 import blank_avatar from "../assets/images/blank_avatar.png";
@@ -9,6 +9,9 @@ import { socket } from "../socket/socket"; // Import socket
 import useListenMessages from "../hooks/useListenMessages"; // Import hook
 import { createConversation } from "../apis/conversation.api";
 import NoSelectConversation from "./noSelectConversation";
+import { Send } from "lucide-react";
+import { Smile } from "lucide-react";
+import { Paperclip } from "lucide-react";
 
 // ... type message
 
@@ -22,6 +25,12 @@ export default function ChatContainer() {
   } = useChatStore();
   const { user } = useAuthStore();
   const [content, setContent] = useState("");
+
+  const lastMessageRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    lastMessageRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   useListenMessages();
 
@@ -103,7 +112,7 @@ export default function ChatContainer() {
   }
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="flex flex-1 flex-col border">
       {/* Header của vùng chat */}
       <div className="flex items-center gap-4 p-4 border-b border-base-300 bg-base-200">
         <div className="avatar online">
@@ -133,7 +142,7 @@ export default function ChatContainer() {
               className={`chat ${isOwnMessage ? "chat-end" : "chat-start"}`}
             >
               <div className="chat-image avatar">
-                <div className="w-10 rounded-full">
+                <div className="w-10 rounded-full border">
                   <img
                     alt="Avatar"
                     src={senderInfo?.profilePicture || blank_avatar}
@@ -159,6 +168,7 @@ export default function ChatContainer() {
             </div>
           );
         })}
+        <div ref={lastMessageRef} />
       </div>
 
       {/* Khu vực nhập tin nhắn */}
@@ -166,7 +176,7 @@ export default function ChatContainer() {
         onSubmit={handleSendMessage}
         className="p-4 border-t border-base-300 bg-base-200"
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
           <input
             type="text"
             placeholder="Type a message..."
@@ -174,17 +184,14 @@ export default function ChatContainer() {
             value={content}
             onChange={(e) => setContent(e.target.value)}
           />
-          <button type="submit" className="btn btn-primary">
-            Send
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              className="w-5 h-5"
+          <div>
+            <button
+              type="submit"
+              className="flex items-center bg-transparent cursor-pointer"
             >
-              <path d="M3.105 2.289a.75.75 0 00-.826.95l1.414 4.949a.75.75 0 00.95.826L11.25 9.25l-7.5-3.333-1.414 4.95a.75.75 0 00.95.826l4.949-1.414a.75.75 0 000-1.404l-4.95-1.413zM12.395 8.289a.75.75 0 00-.95-.826L4.25 9.25l7.5 3.333 1.414-4.95a.75.75 0 00-.826-.95l-4.949 1.414a.75.75 0 000 1.404l4.95 1.413z" />
-            </svg>
-          </button>
+              <Send scale={20} />
+            </button>
+          </div>
         </div>
       </form>
     </div>

@@ -8,7 +8,7 @@ export default function Chat() {
   const { selectedConversation } = useChatStore();
 
   return (
-    <div className="flex h-screen overflow-hidden bg-base-100">
+    <div className="flex h-[33.1rem] overflow-hidden bg-base-100">
       <ChatSideBar />
       {selectedConversation ? <ChatContainer /> : <NoSelectConversation />}
     </div>

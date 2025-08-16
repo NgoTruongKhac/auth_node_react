@@ -27,7 +27,14 @@ export const getNotifications = async (req, res, next) => {
       recipient: userId,
     })
       .populate("sender", "username profilePicture")
-      .populate("conversationId")
+      .populate({
+        path: "conversationId",
+        populate: {
+          path: "participants",
+          match: { _id: { $ne: userId } }, // loại bỏ current
+          select: "username profilePicture",
+        },
+      })
       .sort({ createdAt: -1 });
 
     res.status(200).json(notifications);

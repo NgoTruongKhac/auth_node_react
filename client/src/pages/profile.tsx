@@ -60,8 +60,8 @@ export default function Profile() {
   };
 
   return (
-    <div className="flex h-screen w-full items-center justify-center bg-base-300 p-4">
-      <div className="card w-full max-w-md bg-base-100 shadow-xl">
+    <div className="flex w-full items-center justify-center p-4">
+      <div className="card w-full max-w-md bg-base-200 shadow-xl">
         <div className="card-body items-center">
           <h2 className="card-title text-2xl">Your Profile</h2>
 

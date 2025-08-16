@@ -136,14 +136,29 @@ export const socketServer = (server) => {
       }
     });
 
-    socket.on("sendFirstMessage", ({ senderId, recipientId, content }) => {
-      const recipientSocketId = onlineUsers[recipientId.toString()];
-      io.to(recipientSocketId).emit("getNotification", {
-        sender: senderId,
-        recipient: recipientId,
-        content: content,
-      });
-    });
+    socket.on(
+      "sendFirstMessage",
+      async ({ senderId, recipientId, content }) => {
+        const recipientSocketId = onlineUsers[recipientId.toString()];
+
+        const conversation = await Conversation.findOne({
+          participants: { $all: [senderId, recipientId] },
+        });
+
+        const notification = new Notification({
+          recipient: recipientId,
+          conversationId: conversation,
+          sender: senderId,
+          content: content,
+        });
+        await notification.save();
+        io.to(recipientSocketId).emit("getNotification", {
+          sender: senderId,
+          recipient: recipientId,
+          content: content,
+        });
+      }
+    );
 
     // Trong file socket.js
     socket.on("disconnect", () => {

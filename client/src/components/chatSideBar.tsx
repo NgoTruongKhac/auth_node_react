@@ -89,7 +89,7 @@ function ChatSideBar() {
   console.log("Conversations:", conversations);
 
   return (
-    <div className="flex flex-col w-96 border-r border-base-300 bg-base-200">
+    <div className="flex flex-col w-70 border-r border bg-base-200">
       {/* 3. Sử dụng component SearchUsers và truyền hàm xử lý vào */}
       <SearchUsers onStartChat={handleStartChat} />
 
@@ -97,23 +97,23 @@ function ChatSideBar() {
       <div className="divider m-0"></div>
 
       {/* Danh sách cuộc trò chuyện */}
-      <div className="flex-1 overflow-y-auto">
-        <ul className="menu p-2">
+      <div className="flex-1 overflow-y-auto flex justify-center">
+        <ul className="menu p-2 w-full">
           {conversations.map((conversation) => (
             <li
               // Dùng key dự phòng cho các cuộc trò chuyện mới chưa có _id
               key={conversation._id || conversation.participants[0]._id}
-              className={`rounded-lg mb-1 cursor-pointer ${
+              className={`border rounded-lg mb-1 cursor-pointer ${
                 selectedConversation?.participants[0]._id ===
                 conversation.participants[0]._id
-                  ? "bg-blue-500 text-white"
+                  ? "border-2 border-primary bg-base-300"
                   : "hover:bg-base-300"
               }`}
               onClick={() => setSelectedConversation(conversation)}
             >
               <div className="flex items-center gap-4 p-2">
                 <div className="avatar">
-                  <div className="w-12 rounded-full">
+                  <div className="w-12 rounded-full border">
                     <img
                       src={
                         conversation.participants[0].profilePicture ||
@@ -129,7 +129,7 @@ function ChatSideBar() {
                   </span>
                   {/* Chỉ hiển thị tin nhắn cuối nếu có */}
                   {conversation.lastMessage && (
-                    <span className="text-sm opacity-70 truncate">
+                    <span className="text-sm opacity-70 truncate block w-full max-w-[150px]">
                       {conversation.lastMessage.content}
                     </span>
                   )}

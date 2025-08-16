@@ -51,6 +51,7 @@ export const createConversation = async (req, res, next) => {
       conversation._id
     ).populate({
       path: "participants",
+      match: { _id: { $ne: req.userId } }, // loại bỏ current user
       select: "username profilePicture",
     });
 
@@ -77,6 +78,24 @@ export const getConversations = async (req, res, next) => {
       .sort({ updatedAt: -1 });
 
     return res.status(200).json(conversations);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getConversationById = async (req, res, next) => {
+  try {
+    const { conversationId } = req.params;
+
+    const userId = req.userId;
+
+    const conversation = await Conversation.findById(conversationId).populate({
+      path: "participants",
+      match: { _id: { $ne: userId } },
+      select: "username profilePicture",
+    });
+
+    res.status(200).json(conversation);
   } catch (error) {
     next(error);
   }

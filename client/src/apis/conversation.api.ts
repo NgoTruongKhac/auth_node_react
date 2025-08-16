@@ -12,3 +12,8 @@ export const createConversation = async (
   const response = await api.post("/conversation", { recipientId, content });
   return response.data;
 };
+
+export const getConversationById = async (conversationId: string) => {
+  const response = await api.get(`/conversation/${conversationId}`);
+  return response.data;
+};

@@ -11,32 +11,42 @@ import AuthGoogle from "./pages/authGoogle";
 import PrivateRoute from "./components/privateRoute";
 import PublicRoute from "./components/publicRoute";
 import Chat from "./pages/chat";
+import { useThemeStore } from "./store/useThemeStore";
 
 function App() {
   const { checkAuthStatus } = useAuthStore();
+
+  const { theme } = useThemeStore();
 
   useEffect(() => {
     checkAuthStatus();
   }, [checkAuthStatus]);
 
+  useEffect(() => {
+    // Gán thuộc tính data-theme cho thẻ <html>
+    document.documentElement.setAttribute("theme", theme);
+  }, [theme]);
+
   return (
     <>
-      <Routes>
-        <Route element={<Layout />}>
-          <Route path="/" element={<Home />} />
+      <div data-theme={theme} className="flex justify-center">
+        <Routes>
+          <Route element={<Layout />}>
+            <Route path="/" element={<Home />} />
 
-          <Route element={<PublicRoute />}>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-          </Route>
+            <Route element={<PublicRoute />}>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+            </Route>
 
-          <Route element={<PrivateRoute />}>
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/chat" element={<Chat />} />
+            <Route element={<PrivateRoute />}>
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/chat" element={<Chat />} />
+            </Route>
           </Route>
-        </Route>
-        <Route path="/auth-google" element={<AuthGoogle />} />
-      </Routes>
+          <Route path="/auth-google" element={<AuthGoogle />} />
+        </Routes>
+      </div>
     </>
   );
 }
