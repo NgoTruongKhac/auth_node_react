@@ -1,17 +1,15 @@
 // src/components/chatContainer.tsx
 
-import { useChatStore } from "../store/useChatStore";
-import { useEffect, useRef, useState, type FormEvent } from "react";
-import { getMessages } from "../apis/message.api";
-import { useAuthStore } from "../store/useAuthStore";
-import blank_avatar from "../assets/images/blank_avatar.png";
-import { socket } from "../socket/socket"; // Import socket
-import useListenMessages from "../hooks/useListenMessages"; // Import hook
-import { createConversation } from "../apis/conversation.api";
-import NoSelectConversation from "./noSelectConversation";
 import { Send } from "lucide-react";
-import { Smile } from "lucide-react";
-import { Paperclip } from "lucide-react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { createConversation } from "../apis/conversation.api";
+import { getMessages } from "../apis/message.api";
+import blank_avatar from "../assets/images/blank_avatar.png";
+import useListenMessages from "../hooks/useListenMessages"; // Import hook
+import { socket } from "../socket/socket"; // Import socket
+import { useAuthStore } from "../store/useAuthStore";
+import { useChatStore } from "../store/useChatStore";
+import NoSelectConversation from "./noSelectConversation";
 
 // ... type message
 

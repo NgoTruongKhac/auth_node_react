@@ -14,7 +14,7 @@ import { errorHandler } from "./src/middlewares/errors/error.middleware.js";
 import cors from "cors";
 import passport from "passport";
 import "./src/configs/passport.config.js";
-import { socketServer } from "./src/configs/socket.js";
+import { socketServer } from "./src/configs/socket.config.js";
 
 const app = express();
 
